@@ -1,3 +1,7 @@
 include:
-  - local: "/backend/.gitlab-ci-back.yml"
-  - local: "/frontend/.gitlab-ci-front.yml"
+  - project: "tregubov.s.v/sausage-store"   # твой путь проекта в GitLab
+    ref: "release-0.0.1"                    # ветка, где лежат файлы
+    file: "/backend/.gitlab-ci-back.yml"
+  - project: "tregubov.s.v/sausage-store"
+    ref: "release-0.0.1"
+    file: "/frontend/.gitlab-ci-front.yml"
