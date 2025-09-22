@@ -1,4 +1,0 @@
-include:
-  - local: '/backend/.gitlab-ci.yml'
-  - local: '/frontend/.gitlab-ci.yml'
-#hs
