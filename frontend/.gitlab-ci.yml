@@ -1,0 +1,38 @@
+stages:
+  - build
+  - notify
+
+build-frontend-code-job:
+  stage: build
+  image: node:16
+  only:
+    changes:
+      - frontend/**/*
+  script:
+    - cd frontend
+    - npm install
+    - npm run build
+  artifacts:
+    name: "frontend-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - frontend/dist/frontend
+    expire_in: 1 week
+    when: always
+
+telegram-notification-frontend:
+  stage: notify
+  image: curlimages/curl:8.10.1
+  needs: ["build-frontend-code-job"]
+  only:
+    changes:
+      - frontend/**/*
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /send notification/i
+  script:
+    - |
+      ARTIFACT_URL="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-frontend-code-job"
+      MSG="✅ *Frontend build success*\nProject: *$CI_PROJECT_PATH*\nBranch: *$CI_COMMIT_REF_NAME*\nCommit: \`$CI_COMMIT_SHORT_SHA\`\nArtifacts: $ARTIFACT_URL"
+      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+        -d chat_id="$TELEGRAM_CHAT_ID" \
+        -d parse_mode=Markdown \
+        --data-urlencode text="$MSG"
