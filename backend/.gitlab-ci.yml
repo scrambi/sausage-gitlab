@@ -28,14 +28,11 @@ telegram-notification-backend:
       URL_COMMIT="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
       URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-backend-code-job"
 
-      MSG="<b>✅ Backend build success</b><br>
-      <b>Project:</b> $CI_PROJECT_PATH<br>
-      <b>Branch:</b> $CI_COMMIT_REF_NAME<br>
-      <b>Commit:</b> <code>$CI_COMMIT_SHORT_SHA</code><br>
-      <b>Artifacts (commit):</b> <a href=\"$URL_COMMIT\">download</a><br>
-      <b>Artifacts (latest on branch):</b> <a href=\"$URL_REF\">download</a>"
+      # Формируем текст с \n (переводами строк). HTML-теги <b>, <code>, <a> поддерживаются.
+      MSG=$'<b>✅ Backend build success</b>\n<b>Project:</b> '"$CI_PROJECT_PATH"$'\n<b>Branch:</b> '"$CI_COMMIT_REF_NAME"$'\n<b>Commit:</b> <code>'"$CI_COMMIT_SHORT_SHA"$'</code>\n<b>Artifacts (commit):</b> <a href="'"$URL_COMMIT"'">download</a>\n<b>Artifacts (latest on branch):</b> <a href="'"$URL_REF"'">download</a>'
 
       curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
         -d chat_id="$TELEGRAM_CHAT_ID" \
         -d parse_mode=HTML \
         --data-urlencode "text=$MSG"
+
