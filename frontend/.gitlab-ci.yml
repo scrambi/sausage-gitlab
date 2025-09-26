@@ -2,9 +2,9 @@ stages: [build, notify]
 
 build-frontend-code-job:
   stage: build
-  tags: [gitlab_runner_1]     # оставляю, как у тебя; можно убрать, если не нужно
+  tags: [gitlab_runner_1]
   only:
-    changes: [frontend/**/*]   # ← не [frontend/*], а рекурсивно
+    changes: [frontend/**/*]
   before_script:
     - 'export NVM_DIR="$HOME/.nvm"'
     - '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"'
@@ -16,7 +16,8 @@ build-frontend-code-job:
     - npm run build
   artifacts:
     name: "frontend-$CI_COMMIT_SHORT_SHA"
-    paths: [frontend/dist/frontend]
+    paths:
+      - frontend/dist/frontend
     expire_in: 1 week
     when: always
 
