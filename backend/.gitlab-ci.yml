@@ -12,7 +12,7 @@ build-backend-code-job:
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
     paths: [backend/target/*.jar]
-    expire_in: 1 week
+    expire_in: 10 week
     when: always
 
 telegram-notification-backend:
