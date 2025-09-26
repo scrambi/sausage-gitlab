@@ -17,7 +17,7 @@ build-backend-code-job:
 
 telegram-notification-backend:
   stage: notify
-  tags: [shell]
+  tags: [gitlab_runner_1]
   needs: [build-backend-code-job]
   only:
     changes: [backend/**/*]
