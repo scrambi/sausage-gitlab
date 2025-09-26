@@ -2,23 +2,23 @@ stages: [build, notify]
 
 build-backend-code-job:
   stage: build
-  tags: [gitlab_runner_1]               # твой shell-runner
+  tags: [gitlab_runner_1]
   only:
-    changes: ["backend/**/*"]           # триггер по любым изменениям в backend/
+    changes: ["backend/**/*"]
   script:
     - cd backend
     - mvn -B -DskipTests package
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
     paths:
-      - backend/target/*.jar            # как в методичке
+      - backend/target/*.jar
     expire_in: 1 week
     when: always
 
 telegram-notification-backend:
   stage: notify
   tags: [gitlab_runner_1]
-  needs: [build-backend-code-job]       # ждём сборку
+  needs: [build-backend-code-job]
   only:
     changes: ["backend/**/*"]
     variables:
@@ -27,12 +27,14 @@ telegram-notification-backend:
     - |
       URL_COMMIT="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
       URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-backend-code-job"
-      MSG="<b>✅ Backend build success</b><br/>
-      <b>Project:</b> $CI_PROJECT_PATH<br/>
-      <b>Branch:</b> $CI_COMMIT_REF_NAME<br/>
-      <b>Commit:</b> <code>$CI_COMMIT_SHORT_SHA</code><br/>
-      <b>Artifacts (commit):</b> <a href=\"$URL_COMMIT\">download</a><br/>
+
+      MSG="<b>✅ Backend build success</b><br>
+      <b>Project:</b> $CI_PROJECT_PATH<br>
+      <b>Branch:</b> $CI_COMMIT_REF_NAME<br>
+      <b>Commit:</b> <code>$CI_COMMIT_SHORT_SHA</code><br>
+      <b>Artifacts (commit):</b> <a href=\"$URL_COMMIT\">download</a><br>
       <b>Artifacts (latest on branch):</b> <a href=\"$URL_REF\">download</a>"
+
       curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
         -d chat_id="$TELEGRAM_CHAT_ID" \
         -d parse_mode=HTML \
