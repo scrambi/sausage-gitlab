@@ -1,18 +1,18 @@
 stages: [build, notify]
 
-# этот job поедет на Shell-раннере
 build-backend-code-job:
   stage: build
-  tags: [gitlab_runner_1]          # ← чтобы джоба попала на shell-runner
+  tags: [gitlab_runner_1]
   only:
-    changes: [backend/*]
+    changes: [backend/**/*]
   script:
     - cd backend
     - mvn -B -DskipTests package
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
-    paths: [backend/*.jar]
-    expire_in: 10 week
+    paths:
+      - backend/target/*.jar        # ← путь как в методичке
+    expire_in: 1 week
     when: always
 
 telegram-notification-backend:
@@ -20,7 +20,7 @@ telegram-notification-backend:
   tags: [gitlab_runner_1]
   needs: [build-backend-code-job]
   only:
-    changes: [backend/*]
+    changes: [backend/**/*]
     variables:
       - $CI_COMMIT_MESSAGE =~ /send notification/i
   script: |
