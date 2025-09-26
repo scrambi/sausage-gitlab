@@ -1,19 +1,23 @@
 stages: [build, notify]
 
-# этот job поедет на Shell-раннере
 build-frontend-code-job:
   stage: build
-  tags: [gitlab_runner_1]          # ← чтобы джоба попала на shell-runner
+  tags: [gitlab_runner_1]     # оставляю, как у тебя; можно убрать, если не нужно
   only:
-    changes: [frontend/*]
+    changes: [frontend/**/*]   # ← не [frontend/*], а рекурсивно
+  before_script:
+    - 'export NVM_DIR="$HOME/.nvm"'
+    - '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"'
+    - nvm use 10 || nvm install 10
+    - npm -v
   script:
     - cd frontend
-    - npm install
-    - npm run build
+    - npm ci || npm install
+    - npx ng build --prod || npm run build
   artifacts:
     name: "frontend-$CI_COMMIT_SHORT_SHA"
     paths: [frontend/dist/frontend]
-    expire_in: 10 week
+    expire_in: 1 week
     when: always
 
 telegram-notification-frontend:
@@ -21,7 +25,7 @@ telegram-notification-frontend:
   tags: [gitlab_runner_1]
   needs: [build-frontend-code-job]
   only:
-    changes: [frontend/*]
+    changes: [frontend/**/*]
     variables:
       - $CI_COMMIT_MESSAGE =~ /send notification/i
   script: |
