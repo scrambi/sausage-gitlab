@@ -7,8 +7,6 @@ build-backend-code-job:
   only:
     changes: [backend/**/*]
   script:
-    - java -version
-    - mvn -v
     - cd backend
     - mvn -B -DskipTests package
   artifacts:
