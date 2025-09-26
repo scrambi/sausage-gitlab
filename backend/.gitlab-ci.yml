@@ -1,40 +1,33 @@
-stages:
-  - build
-  - notify
+stages: [build, notify]
 
-variables:
-  MAVEN_OPTS: "-DskipTests"
-
+# этот job поедет на Shell-раннере
 build-backend-code-job:
   stage: build
-  image: maven:3.8.6-openjdk-17
+  tags: [shell]          # ← чтобы джоба попала на shell-runner
   only:
-    changes:
-      - backend/**/*    # запускать только если менялся бэкенд
+    changes: [backend/**/*]
   script:
+    - java -version
+    - mvn -v
     - cd backend
-    - mvn -B package
+    - mvn -B -DskipTests package
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - backend/target/*.jar
+    paths: [backend/target/*.jar]
     expire_in: 1 week
     when: always
 
 telegram-notification-backend:
   stage: notify
-  image: curlimages/curl:8.10.1
-  needs: ["build-backend-code-job"]   # дождаться сборки
+  tags: [shell]
+  needs: [build-backend-code-job]
   only:
-    changes:
-      - backend/**/*                  # AND: изменения в backend
+    changes: [backend/**/*]
     variables:
-      - $CI_COMMIT_MESSAGE =~ /send notification/i   # AND: фраза в сообщении коммита
-  script:
-    - |
-      ARTIFACT_URL="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
-      MSG="✅ *Backend build success*\nProject: *$CI_PROJECT_PATH*\nBranch: *$CI_COMMIT_REF_NAME*\nCommit: \`$CI_COMMIT_SHORT_SHA\`\nArtifacts: $ARTIFACT_URL"
-      curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-        -d chat_id="$TELEGRAM_CHAT_ID" \
-        -d parse_mode=Markdown \
-        --data-urlencode text="$MSG"
+      - $CI_COMMIT_MESSAGE =~ /send notification/i
+  script: |
+    ARTIFACT_URL="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
+    MSG="✅ *Backend build success*\nProject: *$CI_PROJECT_PATH*\nBranch: *$CI_COMMIT_REF_NAME*\nCommit: \`$CI_COMMIT_SHORT_SHA\`\nArtifacts: $ARTIFACT_URL"
+    curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+      -d chat_id="$TELEGRAM_CHAT_ID" -d parse_mode=Markdown \
+      --data-urlencode text="$MSG"
