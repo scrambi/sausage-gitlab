@@ -3,7 +3,7 @@ stages: [build, notify]
 # этот job поедет на Shell-раннере
 build-backend-code-job:
   stage: build
-  tags: [local]          # ← чтобы джоба попала на shell-runner
+  tags: [gitlab_runner_1]          # ← чтобы джоба попала на shell-runner
   only:
     changes: [backend/**/*]
   script:
