@@ -1,32 +1,31 @@
 stages: [build, notify]
 
 # этот job поедет на Shell-раннере
-build-frontend-code-job:
+build-backend-code-job:
   stage: build
   tags: [gitlab_runner_1]          # ← чтобы джоба попала на shell-runner
   only:
-    changes: [frontend/*]
+    changes: [backend/*]
   script:
-    - cd frontend
-    - npm install
-    - npm run build
+    - cd backend
+    - mvn -B -DskipTests package
   artifacts:
-    name: "frontend-$CI_COMMIT_SHORT_SHA"
-    paths: [frontend/dist/frontend]
+    name: "backend-$CI_COMMIT_SHORT_SHA"
+    paths: [backend/*.jar]
     expire_in: 10 week
     when: always
 
-telegram-notification-frontend:
+telegram-notification-backend:
   stage: notify
   tags: [gitlab_runner_1]
-  needs: [build-frontend-code-job]
+  needs: [build-backend-code-job]
   only:
-    changes: [frontend/*]
+    changes: [backend/*]
     variables:
       - $CI_COMMIT_MESSAGE =~ /send notification/i
   script: |
-    ARTIFACT_URL="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-frontend-code-job"
-    MSG="✅ *Frontend build success*\nProject: *$CI_PROJECT_PATH*\nBranch: *$CI_COMMIT_REF_NAME*\nCommit: \`$CI_COMMIT_SHORT_SHA\`\nArtifacts: $ARTIFACT_URL"
+    ARTIFACT_URL="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
+    MSG="✅ *Backend build success*\nProject: *$CI_PROJECT_PATH*\nBranch: *$CI_COMMIT_REF_NAME*\nCommit: \`$CI_COMMIT_SHORT_SHA\`\nArtifacts: $ARTIFACT_URL"
     curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
       -d chat_id="$TELEGRAM_CHAT_ID" -d parse_mode=Markdown \
       --data-urlencode text="$MSG"
