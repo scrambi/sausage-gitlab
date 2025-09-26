@@ -7,7 +7,7 @@ variables:
 
 build-backend-code-job:
   stage: build
-  image: maven:3.8.6-openjdk-16
+  image: maven:3.8.6-openjdk-17
   only:
     changes:
       - backend/**/*    # запускать только если менялся бэкенд
