@@ -5,7 +5,7 @@ build-backend-code-job:
   stage: build
   tags: [gitlab_runner_1]          # ← чтобы джоба попала на shell-runner
   only:
-    changes: [backend/**/*]
+    changes: [backend/*]
   script:
     - cd backend
     - mvn -B -DskipTests package
@@ -20,7 +20,7 @@ telegram-notification-backend:
   tags: [gitlab_runner_1]
   needs: [build-backend-code-job]
   only:
-    changes: [backend/**/*]
+    changes: [backend/*]
     variables:
       - $CI_COMMIT_MESSAGE =~ /send notification/i
   script: |
