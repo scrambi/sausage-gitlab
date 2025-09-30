@@ -16,22 +16,18 @@ build-backend-code-job:
   tags: [gitlab_runner_1]
   only:
     changes: ["backend/**/*"]
-  image: maven:3-eclipse-temurin-17
   before_script:
-    - echo "Build job: using Maven image"
+    - 'export NVM_DIR="$HOME/.nvm"'
+    - '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"'
   script:
     - cd backend
-    - mvn -B -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository clean package -DskipTests
+    - ./mvnw clean package -DskipTests
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
     paths:
       - backend/target/*.jar
     expire_in: 1 week
     when: always
-  cache:
-    key: "m2-cache-$CI_COMMIT_REF_SLUG"
-    paths:
-      - ${CI_PROJECT_DIR}/.m2/repository
 
 # ---------- Sonar (Maven) ----------
 sonar-scan-backend:
