@@ -1,6 +1,8 @@
+default:
+  tags:
+    - docker 
 include:
   - local: backend/.gitlab-ci.yml
   - local: frontend/.gitlab-ci.yml
-include:
   - template: Security/SAST.gitlab-ci.yml 
 #asas
