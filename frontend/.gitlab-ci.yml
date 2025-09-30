@@ -1,14 +1,11 @@
-# frontend/.gitlab-ci.yml
-
 stages:
   - build
   - analyze
-  - notify  ##
+  - notify
 
-# ---------- Build frontend (Shell runner) ----------
 build-frontend-code-job:
   stage: build
-  tags: [gitlab_runner_1]         # Shell-runner
+  tags: [gitlab_runner_1]     # Shell-runner
   only:
     changes: ["frontend/**/*"]
   before_script:
@@ -22,15 +19,13 @@ build-frontend-code-job:
     - npm run build
   artifacts:
     name: "frontend-$CI_COMMIT_SHORT_SHA"
-    paths:
-      - frontend/dist/frontend
+    paths: [frontend/dist/frontend]
     expire_in: 1 week
     when: always
 
-# ---------- SonarQube scan (Docker runner) ----------
 sonarqube_frontend_scan:
   stage: analyze
-  tags: [docker]                  # Docker-runner
+  tags: [docker]              # Docker-runner
   image:
     name: sonarsource/sonar-scanner-cli:11
     entrypoint: [""]
@@ -40,8 +35,7 @@ sonarqube_frontend_scan:
   cache:
     key: "sonar-front-$CI_COMMIT_REF_SLUG"
     policy: pull-push
-    paths:
-      - .sonar/frontend/cache
+    paths: [.sonar/frontend/cache]
   script:
     - cd frontend
     - sonar-scanner \
@@ -49,19 +43,15 @@ sonarqube_frontend_scan:
         -Dsonar.projectName=front \
         -Dsonar.host.url="$SONAR_HOST_URL" \
         -Dsonar.login="$SONAR_TOKEN_FRONT"
-        # при желании исключи артефакты сборки:
-        # -Dsonar.exclusions=dist/**,build/**,node_modules/**
   allow_failure: true
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH =~ /^(main|master|develop)$/
-    - changes:
-        - frontend/**/*
+    - changes: [frontend/**/*]
 
-# ---------- Telegram notification (Shell runner) ----------
 telegram-notification-frontend:
   stage: notify
-  tags: [gitlab_runner_1]
+  tags: [gitlab_runner_1]     # Shell-runner
   needs: [build-frontend-code-job]
   only:
     changes: ["frontend/**/*"]
@@ -70,9 +60,7 @@ telegram-notification-frontend:
   script: |
     URL_COMMIT="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-frontend-code-job"
     URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-frontend-code-job"
-
     MSG=$'<b>✅ Frontend build success</b>\n<b>Project:</b> '"$CI_PROJECT_PATH"$'\n<b>Branch:</b> '"$CI_COMMIT_REF_NAME"$'\n<b>Commit:</b> <code>'"$CI_COMMIT_SHORT_SHA"$'</code>\n<b>Artifacts (commit):</b> <a href="'"$URL_COMMIT"'">download</a>\n<b>Artifacts (latest on branch):</b> <a href="'"$URL_REF"'">download</a>'
-
     curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
       -d chat_id="$TELEGRAM_CHAT_ID" -d parse_mode=HTML \
       --data-urlencode "text=$MSG"
