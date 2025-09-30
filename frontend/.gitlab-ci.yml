@@ -1,10 +1,8 @@
-default: 
-  tags: 
-    - docker
 stages:
   - build
-  - analyze
   - notify
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 build-frontend-code-job:
   stage: build
@@ -26,31 +24,6 @@ build-frontend-code-job:
     expire_in: 1 week
     when: always
 
-sonarqube_frontend_scan:
-  stage: analyze
-  tags: [docker]              # Docker-runner
-  image:
-    name: sonarsource/sonar-scanner-cli:11
-    entrypoint: [""]
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar/frontend"
-    GIT_DEPTH: "0"
-  cache:
-    key: "sonar-front-$CI_COMMIT_REF_SLUG"
-    policy: pull-push
-    paths: [.sonar/frontend/cache]
-  script:
-    - cd frontend
-    - sonar-scanner \
-        -Dsonar.projectKey=front \
-        -Dsonar.projectName=front \
-        -Dsonar.host.url="$SONAR_HOST_URL" \
-        -Dsonar.login="$SONAR_TOKEN_FRONT"
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH =~ /^(main|master|develop)$/
-    - changes: [frontend/**/*]
 #
 telegram-notification-frontend:
   stage: notify
