@@ -3,13 +3,12 @@ default:
   tags: ["docker"]
 
 stages:
-  - test
   - build
   - scan-sonar
+  - test
   - notify
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
+
 
 # ---------- Build ----------
 build-backend-code-job:
@@ -64,6 +63,9 @@ sonar-scan-backend:
     - if: $CI_COMMIT_BRANCH == 'master'
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 # ---------- Notify ----------
 telegram-notification-backend:
