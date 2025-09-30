@@ -27,7 +27,8 @@ build-backend-code-job:
     expire_in: 1 week
     when: always
 
-
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 # ---------- Notify ----------
 telegram-notification-backend:
