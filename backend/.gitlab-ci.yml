@@ -5,8 +5,9 @@ default:
 stages:
   - build
   - test
-  - notify
   - scan-sonar
+  - notify
+ 
 
 include:
   - template: Security/SAST.gitlab-ci.yml
