@@ -6,7 +6,7 @@ stages:
 # === BUILD (Shell runner) ===
 build-frontend-code-job:
   stage: build
-  tags: [docker]        # <-- Shell runner
+  tags: [gitlab_runner_1]        # <-- Shell runner
   only:
     changes: ["frontend/**/*"]
   before_script:
@@ -28,7 +28,7 @@ build-frontend-code-job:
 # === SAST (Docker runner) ===
 sast:
   stage: analyze
-  tags: [docker_runner_1]         # <-- ОБЯЗАТЕЛЬНО Docker runner
+  tags: [docker]         # <-- ОБЯЗАТЕЛЬНО Docker runner
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH =~ /^(main|master|develop)$/
@@ -36,7 +36,7 @@ sast:
 # === SonarQube (Docker runner) ===
 sonarqube_frontend_scan:
   stage: analyze
-  tags: [docker_runner_1]         # <-- Docker runner
+  tags: [docker]         # <-- Docker runner
   image:
     name: sonarsource/sonar-scanner-cli:11
     entrypoint: [""]
@@ -63,7 +63,7 @@ sonarqube_frontend_scan:
 # === Telegram (Shell runner, как было) ===
 telegram-notification-frontend:
   stage: notify
-  tags: [docker]
+  tags: [gitlab_runner_1]
   needs: [build-frontend-code-job]
   only:
     changes: ["frontend/**/*"]
