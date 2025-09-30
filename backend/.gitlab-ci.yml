@@ -8,7 +8,8 @@ stages:
   - test
   - notify
 
-
+include:
+  - template: Security/SAST.gitlab-ci.yml
 
 # ---------- Build ----------
 build-backend-code-job:
@@ -21,7 +22,6 @@ build-backend-code-job:
     - echo "Build job: using Maven image"
   script:
     - cd backend
-    # если у вас в репо есть mvnw — можно использовать ./mvnw; тут использую mvn (image содержит maven)
     - mvn -B -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository clean package -DskipTests
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
@@ -37,15 +37,18 @@ build-backend-code-job:
 # ---------- Sonar (Maven) ----------
 sonar-scan-backend:
   stage: scan-sonar
-  image: maven:3-eclipse-temurin-17
+  image:
+    name: maven:3-eclipse-temurin-17
+    entrypoint: [""]
   needs:
     - job: build-backend-code-job
       artifacts: true
   variables:
-    # Sonar cache и локальный maven-репозиторий уже используются для передачи зависимостей
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
     MAVEN_OPTS: "-Xmx1024m"
+    # если используете spotbugs/компиляцию, можно добавить:
+    # COMPILE: "false"
   cache:
     policy: pull-push
     key: "sonar-cache-$CI_COMMIT_REF_SLUG"
@@ -53,9 +56,9 @@ sonar-scan-backend:
       - "${SONAR_USER_HOME}/cache"
       - ${CI_PROJECT_DIR}/.m2/repository
   before_script:
+    - echo "Preparing sonar scan"
     - cd backend
   script:
-    # используем локальный репозиторий, чтобы анализаторы не перекомпилировали проект
     - mvn -B -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN_BACK}" -Dsonar.projectKey=backend-java
   allow_failure: true
   rules:
@@ -63,9 +66,6 @@ sonar-scan-backend:
     - if: $CI_COMMIT_BRANCH == 'master'
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
-
-include:
-  - template: Security/SAST.gitlab-ci.yml
 
 # ---------- Notify ----------
 telegram-notification-backend:
@@ -78,7 +78,7 @@ telegram-notification-backend:
       - "$CI_COMMIT_MESSAGE =~ /send notification/i"
   script: |
     URL_COMMIT="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
-    URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-backend-code-job"
+    URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_PROJECT_REF_NAME/download?job=build-backend-code-job"
     MSG=$'<b>✅ Backend build success</b>\n<b>Project:</b> '"$CI_PROJECT_PATH"$'\n<b>Branch:</b> '"$CI_COMMIT_REF_NAME"$'\n<b>Commit:</b> <code>'"$CI_COMMIT_SHORT_SHA"$'</code>\n<b>Artifacts (commit):</b> <a href="'"$URL_COMMIT"'">download</a>\n<b>Artifacts (latest on branch):</b> <a href="'"$URL_REF"'">download</a>'
     curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
       -d chat_id="$TELEGRAM_CHAT_ID" -d parse_mode=HTML \
