@@ -6,7 +6,7 @@ stages:
 # === BUILD (Shell runner) ===
 build-frontend-code-job:
   stage: build
-  tags: [gitlab_runner_1]        # <-- Shell runner
+  tags: [docker]        # <-- Shell runner
   only:
     changes: ["frontend/**/*"]
   before_script:
