@@ -29,33 +29,19 @@ build-backend-code-job:
     when: always
 
 # ---------- Sonar (Maven) ----------
-sonar-scan-backend:
+build-sonar:
   stage: scan-sonar
-  image: maven:3-eclipse-temurin-17
-  needs:
-    - job: build-backend-code-job
-      artifacts: true
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-    GIT_DEPTH: "0"
-    MAVEN_OPTS: "-Xmx1024m"
   cache:
     policy: pull-push
     key: "sonar-cache-$CI_COMMIT_REF_SLUG"
     paths:
       - "${SONAR_USER_HOME}/cache"
-      - ${CI_PROJECT_DIR}/.m2/repository
-  before_script:
-    - echo "Preparing sonar scan"
-    - cd backend
-  script:
-    - mvn -B -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository 
-        org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 
-        -Dsonar.host.url="${SONAR_HOST_URL}" 
-        -Dsonar.login="${SONAR_TOKEN_BACK}" 
-        -Dsonar.projectKey=backend-java
-        -Dsonar.projectName=backend-java
-        -Dsonar.qualitygate.wait=true
+      - sonar-scanner/
+      
+  script: 
+    - mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+    - Dsonar.host.url="${SONAR_HOST_URL}" \
+    - Dsonar.login="${SONAR_TOKEN_BACK}" \
   allow_failure: true
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
