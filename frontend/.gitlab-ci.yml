@@ -48,7 +48,7 @@ sonarqube_frontend_scan:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_BRANCH =~ /^(main|master|develop)$/
     - changes: [frontend/**/*]
-
+#
 telegram-notification-frontend:
   stage: notify
   tags: [gitlab_runner_1]     # Shell-runner
