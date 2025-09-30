@@ -53,7 +53,7 @@ sonar-scan-backend:
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
 
---
+# ---------- SAST (по шаблону GitLab) ----------
 include:
   - template: Security/SAST.gitlab-ci.yml
 
