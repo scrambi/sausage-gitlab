@@ -1,16 +1,16 @@
-default:
-  tags: ["docker"]
+# frontend/.gitlab-ci.yml
+# Примечание: замените "docker" на тег вашего Docker-runner если он другой.
 
 stages:
   - build
+  - analyze
   - test
   - notify
-include:
-  - template: Security/SAST.gitlab-ci.yml
 
+# ---------- сборка фронта (shell-runner) ----------
 build-frontend-code-job:
   stage: build
-  tags: [gitlab_runner_1]     # Shell-runner
+  tags: ["gitlab_runner_1"]     # твой Shell-runner, который умеет собирать node
   only:
     changes: ["frontend/**/*"]
   before_script:
@@ -24,14 +24,48 @@ build-frontend-code-job:
     - npm run build
   artifacts:
     name: "frontend-$CI_COMMIT_SHORT_SHA"
-    paths: [frontend/dist/frontend]
+    paths:
+      - frontend/dist/frontend
     expire_in: 1 week
     when: always
 
-#
+# ---------- Sonar анализ (docker-runner with sonar-scanner image) ----------
+sonar-scan-frontend:
+  stage: analyze
+  image:
+    name: sonarsource/sonar-scanner-cli:11
+    entrypoint: [""]
+  tags: ["docker"]   # <- должен попасть на Docker-раннер; замените тег при необходимости
+  needs:
+    - job: build-frontend-code-job
+      artifacts: true
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    policy: pull-push
+    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
+    paths:
+      - "${SONAR_USER_HOME}/cache"
+      - sonar-scanner/
+  script:
+    - cd frontend
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN}" -Dsonar.projectKey=frontend-js
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+# ---------- SAST (по шаблону GitLab) ----------
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
+# ---------- уведомление (telegram) ----------
 telegram-notification-frontend:
   stage: notify
-  tags: [gitlab_runner_1]     # Shell-runner
+  tags: ["gitlab_runner_1"]
   needs: [build-frontend-code-job]
   only:
     changes: ["frontend/**/*"]
