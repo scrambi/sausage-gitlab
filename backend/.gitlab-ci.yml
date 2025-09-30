@@ -3,7 +3,6 @@ default:
 
 stages:
   - build
-  - scan-sonar
   - test
   - notify
 
@@ -28,29 +27,7 @@ build-backend-code-job:
     expire_in: 1 week
     when: always
 
-# ---------- Sonar (Maven) ----------
-build-sonar:
-  stage: scan-sonar
-  cache:
-    policy: pull-push
-    key: "sonar-cache-$CI_COMMIT_REF_SLUG"
-    paths:
-      - "${SONAR_USER_HOME}/cache"
-      - sonar-scanner/
-      
-  script: 
-    - mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-    - Dsonar.host.url="${SONAR_HOST_URL}" \
-    - Dsonar.login="${SONAR_TOKEN_BACK}" \
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'master'
-    - if: $CI_COMMIT_BRANCH == 'main'
-    - if: $CI_COMMIT_BRANCH == 'develop'
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
 
 # ---------- Notify ----------
 telegram-notification-backend:
