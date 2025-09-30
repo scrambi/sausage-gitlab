@@ -50,7 +50,7 @@ sonar-scan-frontend:
       - sonar-scanner/
   script:
     - cd frontend
-    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN}" -Dsonar.projectKey=frontend-js
+    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}" -Dsonar.login="${SONAR_TOKEN_FRONT}" -Dsonar.projectKey=frontend-js
   allow_failure: true
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
