@@ -3,8 +3,8 @@ default:
   tags: ["docker"]
 
 stages:
-  - build
   - test
+  - build
   - scan-sonar
   - notify
 
