@@ -3,7 +3,7 @@
 stages:
   - build
   - analyze
-  - notify
+  - notify  ##
 
 # ---------- Build frontend (Shell runner) ----------
 build-frontend-code-job:
