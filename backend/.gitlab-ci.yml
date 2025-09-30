@@ -1,8 +1,12 @@
 default:
   tags: ["docker"]
 
-stages: [build, notify]
-
+stages: 
+  - build
+  - analyze
+  - test
+  - notify
+# ---------- сборка бекенда ----------
 build-backend-code-job:
   stage: build
   tags: [gitlab_runner_1]
@@ -10,7 +14,7 @@ build-backend-code-job:
     changes: ["backend/**/*"]
   script:
     - cd backend
-    - mvn -B -DskipTests package
+    - mvn -B -DskipTests clean package
   artifacts:
     name: "backend-$CI_COMMIT_SHORT_SHA"
     paths:
@@ -18,10 +22,49 @@ build-backend-code-job:
     expire_in: 1 week
     when: always
 
+# ---------- Sonar анализ для Java бекенда ----------
+sonar-scan-backend:
+  stage: analyze
+  image: maven:3-eclipse-temurin-17
+  tags: ["docker"]
+  needs:
+    - job: build-backend-code-job
+      artifacts: false
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    policy: pull-push
+    key: "sonar-backend-cache-$CI_COMMIT_REF_SLUG"
+    paths:
+      - "${SONAR_USER_HOME}/cache"
+      - .m2/repository
+  before_script:
+    - cd backend
+  script:
+    - mvn verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 
+      -Dsonar.host.url="${SONAR_HOST_URL}" 
+      -Dsonar.login="${SONAR_TOKEN_BACK}"
+      -Dsonar.projectKey=backend-java
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'master'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+
+--
+include:
+  - template: Security/SAST.gitlab-ci.yml
+
+# ---------- уведомление (telegram) ----------
 telegram-notification-backend:
   stage: notify
   tags: [gitlab_runner_1]
-  needs: [build-backend-code-job]
+  needs: 
+    - job: build-backend-code-job
+    - job: sonar-scan-backend
+      optional: true
   only:
     changes: ["backend/**/*"]
     variables:
