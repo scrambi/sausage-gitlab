@@ -6,7 +6,7 @@ stages:
   - analyze
   - test
   - notify
-# ---------- сборка бекенда ----------
+
 build-backend-code-job:
   stage: build
   tags: [gitlab_runner_1]
@@ -22,7 +22,7 @@ build-backend-code-job:
     expire_in: 1 week
     when: always
 
-# ---------- Sonar анализ для Java бекенда ----------
+
 sonar-scan-backend:
   stage: analyze
   image: maven:3-eclipse-temurin-17
@@ -54,11 +54,11 @@ sonar-scan-backend:
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
 
-# ---------- SAST (по шаблону GitLab) ----------
+
 include:
   - template: Security/SAST.gitlab-ci.yml
 
-# ---------- уведомление (telegram) ----------
+
 telegram-notification-backend:
   stage: notify
   tags: [gitlab_runner_1]
@@ -75,10 +75,11 @@ telegram-notification-backend:
       URL_COMMIT="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_SHA/download?job=build-backend-code-job"
       URL_REF="$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-backend-code-job"
 
-      # Формируем текст с \n (переводами строк). HTML-теги <b>, <code>, <a> поддерживаются.
+     
       MSG=$'<b>✅ Backend build success</b>\n<b>Project:</b> '"$CI_PROJECT_PATH"$'\n<b>Branch:</b> '"$CI_COMMIT_REF_NAME"$'\n<b>Commit:</b> <code>'"$CI_COMMIT_SHORT_SHA"$'</code>\n<b>Artifacts (commit):</b> <a href="'"$URL_COMMIT"'">download</a>\n<b>Artifacts (latest on branch):</b> <a href="'"$URL_REF"'">download</a>'
 
       curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
         -d chat_id="$TELEGRAM_CHAT_ID" \
         -d parse_mode=HTML \
+
         --data-urlencode "text=$MSG"
